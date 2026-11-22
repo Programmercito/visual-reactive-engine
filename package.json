@@ -1,0 +1,28 @@
+{
+  "name": "visual-reactive-engine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "api": "node server/api-server.js",
+    "demo": "node server/api-server.js"
+  },
+  "devDependencies": {
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d": "^0.21.0",
+    "@types/howler": "^2.2.13",
+    "@types/three": "^0.187.0",
+    "@types/ws": "^8.18.2",
+    "gsap": "^3.15.1",
+    "howler": "^2.2.4",
+    "three": "^0.187.0",
+    "troika-three-text": "^0.53.1",
+    "ws": "^8.23.0"
+  }
+}
