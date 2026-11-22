@@ -10,6 +10,7 @@ export interface TextEffectOptions {
   duration?: number;
   x?: number;
   y?: number;
+  onStart?: () => void;
   onComplete?: () => void;
 }
 

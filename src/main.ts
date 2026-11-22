@@ -11,6 +11,7 @@ import { ImageFloatEffect } from './effects/image-float';
 import { ParticleEffect } from './effects/particles';
 import { ExplosionEffect } from './effects/explosion';
 import { ModelActorEffect } from './effects/model-actor';
+import { SpeechQueue } from './effects/speech-queue';
 import { getMode, MODES, type AnimationMode } from './config/modes';
 
 // ---- Init ----
@@ -21,7 +22,20 @@ const renderer = createRenderer(canvas);
 const engine = new AnimationEngine(scene, camera, renderer);
 const events = new EventManager();
 const socket = new APISocket(events);
+const speechQueue = new SpeechQueue();
 const textQueue = new TextQueue(scene, engine);
+const speechToggle = document.getElementById('speech-toggle') as HTMLButtonElement;
+
+if (!speechQueue.supported) {
+  speechToggle.disabled = true;
+  speechToggle.textContent = 'Voz no disponible';
+} else {
+  speechToggle.addEventListener('click', () => {
+    speechQueue.setEnabled(!speechQueue.isEnabled);
+    speechToggle.textContent = speechQueue.isEnabled ? '🔊 Voz activada' : '🔇 Activar voz';
+    speechToggle.setAttribute('aria-pressed', String(speechQueue.isEnabled));
+  });
+}
 
 // Lights for 3D models
 const ambient = new THREE.AmbientLight(0xffffff, 0.6);
@@ -51,6 +65,12 @@ events.onAction((action: VisualAction) => {
         sender: action.sender,
         mode: action.mode || currentMode.id,
         duration: action.duration,
+        onStart: () => {
+          const spokenText = action.sender
+            ? `${action.sender.replace(/^@/, '')} dice: ${action.text}`
+            : action.text;
+          speechQueue.add(spokenText);
+        },
       });
       break;
     }

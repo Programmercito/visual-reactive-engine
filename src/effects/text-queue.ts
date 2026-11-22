@@ -32,6 +32,7 @@ export class TextQueue {
       this.queue.shift();
       const id = this.nextId++;
       this.active.set(id, { y, height });
+      options.onStart?.();
 
       const fx = new TextEffect(this.scene, {
         ...options,
