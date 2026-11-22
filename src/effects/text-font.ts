@@ -1,6 +1,6 @@
 import { FontLoader, type Font } from 'three/addons/loaders/FontLoader.js';
 
-const fontUrl = '/fonts/helvetiker_bold.typeface.json';
+const fontUrl = '/fonts/droid_sans_bold.typeface.json';
 
 let fontCache: Font | null = null;
 const pending: ((font: Font) => void)[] = [];
