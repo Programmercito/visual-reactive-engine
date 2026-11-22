@@ -25,7 +25,7 @@ export class TextQueue {
   private pump(): void {
     while (this.queue.length && this.active.size < MAX_VISIBLE_TEXTS) {
       const options = this.queue[0];
-      const height = estimateTextHeight(options.text);
+      const height = estimateTextHeight(options.text, options.sender);
       const y = this.findFreeY(height, options.y);
       if (y === null) return;
 
@@ -44,7 +44,7 @@ export class TextQueue {
       });
 
       this.engine.add({
-        update: () => fx.update(),
+        update: (dt) => fx.update(dt),
         dispose: () => fx.dispose(),
       });
     }

@@ -70,5 +70,5 @@ server.listen(PORT, () => {
   console.log(`Visual Reactive API running on http://localhost:${PORT}`);
   console.log(`WebSocket: ws://localhost:${PORT}`);
   console.log(`\nExample POST:`);
-  console.log(`  curl -X POST http://localhost:${PORT}/event -H "Content-Type: application/json" -d "{\\"action\\":\\"text\\",\\"text\\":\\"Hola\\"}"`);
+  console.log(`  curl.exe -X POST http://localhost:${PORT}/event -H "Content-Type: application/json" -d "{\\"action\\":\\"text\\",\\"sender\\":\\"Ana\\",\\"text\\":\\"Hola\\"}"`);
 });

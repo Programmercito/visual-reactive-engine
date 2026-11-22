@@ -48,6 +48,7 @@ events.onAction((action: VisualAction) => {
     case 'text': {
       textQueue.add({
         text: action.text,
+        sender: action.sender,
         mode: action.mode || currentMode.id,
         duration: action.duration,
       });

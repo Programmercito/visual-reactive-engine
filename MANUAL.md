@@ -57,14 +57,25 @@ vre.emit({ action: 'spawn', asset: 'dragon', animation: 'fly' });
 Conecta cualquier cliente a `ws://localhost:8787` y envía JSON:
 
 ```json
-{ "action": "text", "text": "Nuevo seguidor", "duration": 5 }
+{ "action": "text", "sender": "@ana", "text": "Nuevo seguidor", "duration": 5 }
 ```
 
 ### HTTP POST
 ```bash
 curl -X POST http://localhost:8787/event \
   -H "Content-Type: application/json" \
-  -d '{"action":"text","text":"Hola TikTok","duration":4}'
+  -d '{"action":"text","sender":"@ana","text":"Hola TikTok","duration":4}'
+```
+
+### PowerShell en Windows
+Usa `curl.exe` y guarda el JSON en una variable para evitar problemas con comillas:
+
+```powershell
+$body = '{"action":"text","sender":"@ana","text":"Hola TikTok","duration":4}'
+
+curl.exe -X POST http://localhost:8787/event `
+  -H "Content-Type: application/json" `
+  -d $body
 ```
 
 ---
@@ -73,7 +84,7 @@ curl -X POST http://localhost:8787/event \
 
 | Acción | Campos | Descripción |
 |--------|--------|-------------|
-| `text` | `text`, `mode`, `duration` | Muestra texto animado |
+| `text` | `text`, `sender`, `mode`, `duration` | Muestra el nombre del remitente, seguido de `:`, pequeño sobre el texto principal |
 | `show-image` | `image`, `x`, `y`, `scale`, `duration` | Imagen flotante PNG/WebP |
 | `particles` | `preset`, `x`, `y`, `duration` | Sistema de partículas |
 | `explosion` | `preset`, `x`, `y`, `duration` | Partículas + luz puntual |
@@ -84,7 +95,7 @@ curl -X POST http://localhost:8787/event \
 ### Ejemplos
 
 ```json
-{ "action": "text", "text": "¡Gracias por la rosa!", "mode": "gold", "duration": 5 }
+{ "action": "text", "sender": "@ana", "text": "¡Gracias por la rosa!", "mode": "gold", "duration": 5 }
 { "action": "show-image", "image": "gift.png", "x": 0, "y": -2, "scale": 3, "duration": 4 }
 { "action": "spawn", "asset": "dragon", "animation": "fly", "duration": 8 }
 { "action": "particles", "preset": "gold-explosion", "x": 0, "y": 0, "duration": 2 }

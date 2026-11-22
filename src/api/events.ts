@@ -14,6 +14,7 @@ export interface APIEvent {
   image?: string;
   preset?: string;
   text?: string;
+  sender?: string;
   mode?: string;
   duration?: number;
   x?: number;
@@ -27,7 +28,7 @@ export type VisualAction =
   | { type: 'spawn'; asset: string; animation?: string; duration: number }
   | { type: 'show-image'; image: string; duration: number; x?: number; y?: number; scale?: number }
   | { type: 'particles'; preset: string; x?: number; y?: number; duration: number }
-  | { type: 'text'; text: string; mode?: string; duration: number }
+  | { type: 'text'; text: string; sender?: string; mode?: string; duration: number }
   | { type: 'explosion'; x?: number; y?: number; preset?: string; duration: number }
   | { type: 'set-mode'; mode: AnimationMode }
   | { type: 'clear' };
@@ -87,6 +88,7 @@ export class EventManager {
         return {
           type: 'text',
           text: event.text,
+          sender: typeof event.sender === 'string' ? event.sender.trim().slice(0, 64) || undefined : undefined,
           mode: event.mode,
           duration,
         };

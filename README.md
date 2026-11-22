@@ -32,7 +32,7 @@ Abre `http://localhost:5173` y prueba:
 ```bash
 curl -X POST http://localhost:8787/event \
   -H "Content-Type: application/json" \
-  -d '{"action":"text","text":"¡Hola!","duration":5}'
+  -d '{"action":"text","sender":"@ana","text":"¡Hola!","duration":5}'
 ```
 
 Para ver una demo automática abre `http://localhost:5173/?demo`.
