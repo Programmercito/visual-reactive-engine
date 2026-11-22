@@ -20,7 +20,7 @@ const SENDER_FONT_SIZE = 0.34;
 const SENDER_LINE_HEIGHT = SENDER_FONT_SIZE * 1.4;
 const SENDER_GAP = 0.14;
 const TEXT_DEPTH = 0.24;
-const MAX_CHARS_PER_LINE = 14;
+const MAX_CHARS_PER_LINE = 24;
 const SAFE_WIDTH = 7;
 const SAFE_HEIGHT = 8.2;
 const HALF_FRAME_WIDTH = 4.5;
@@ -68,6 +68,28 @@ function wrapLines(text: string, maxChars: number): string[] {
   return lines;
 }
 
+function getSenderLines(sender = ''): string[] {
+  const trimmedSender = sender.trim().slice(0, 64);
+  return trimmedSender ? wrapLines(`${trimmedSender}:`, 24) : [];
+}
+
+function fitBodyLines(text: string, sender = ''): string[] {
+  const lines = wrapLines(text.trim(), MAX_CHARS_PER_LINE);
+  const senderLines = getSenderLines(sender);
+  const senderHeight = senderLines.length * SENDER_LINE_HEIGHT;
+  const availableHeight = SAFE_HEIGHT - senderHeight - (senderLines.length ? SENDER_GAP : 0);
+  const maxLines = Math.max(1, Math.floor(availableHeight / LINE_HEIGHT));
+
+  if (lines.length <= maxLines) return lines;
+
+  const visibleLines = lines.slice(0, maxLines);
+  const lastLine = visibleLines[maxLines - 1].slice(0, MAX_CHARS_PER_LINE - 1).trimEnd();
+  const wordBoundary = lastLine.lastIndexOf(' ');
+  const clippedLine = wordBoundary > 0 ? lastLine.slice(0, wordBoundary) : lastLine;
+  visibleLines[maxLines - 1] = `${clippedLine}…`;
+  return visibleLines;
+}
+
 function randomFrom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -89,10 +111,8 @@ function nextFireworkPalette(): FireworkPalette {
 
 /** Conservative vertical reservation used by TextQueue to avoid overlapping messages. */
 export function estimateTextHeight(text: string, sender = ''): number {
-  const bodyHeight = wrapLines(text.trim(), MAX_CHARS_PER_LINE).length * LINE_HEIGHT;
-  const senderLineCount = sender.trim()
-    ? wrapLines(`${sender.trim().slice(0, 64)}:`, 24).length
-    : 0;
+  const bodyHeight = fitBodyLines(text, sender).length * LINE_HEIGHT;
+  const senderLineCount = getSenderLines(sender).length;
   const senderHeight = senderLineCount ? senderLineCount * SENDER_LINE_HEIGHT + SENDER_GAP : 0;
   return Math.min(SAFE_HEIGHT, bodyHeight + senderHeight) + 0.7;
 }
@@ -169,9 +189,8 @@ export class TextEffect {
     getFont((font) => {
       if (!this.alive) return;
 
-      const bodyLines = wrapLines(options.text.trim(), MAX_CHARS_PER_LINE);
-      const sender = options.sender?.trim().slice(0, 64);
-      const senderLines = sender ? wrapLines(`${sender}:`, 24) : [];
+      const senderLines = getSenderLines(options.sender);
+      const bodyLines = fitBodyLines(options.text, options.sender);
       const makeGeometries = (lines: string[], size: number) => lines.map((line) => {
         const geometry = new TextGeometry(line, {
           font,

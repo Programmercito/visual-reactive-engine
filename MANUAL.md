@@ -92,6 +92,8 @@ curl.exe -X POST http://localhost:8787/event `
 | `set-mode` | `mode` | Cambia paleta de colores |
 | `clear` | — | Recarga la página (limpia efectos) |
 
+Los comentarios se ajustan al espacio del lienzo: se muestran hasta 10 líneas (máximo teórico de 240 caracteres sin remitente). Si se incluye un remitente, el espacio disponible para el comentario baja a un máximo teórico de 8 líneas (192 caracteres). El excedente se indica con `…`; el evento API puede contener más texto, pero no todo será visible a la vez.
+
 ### Ejemplos
 
 ```json
