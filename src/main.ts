@@ -23,9 +23,6 @@ const events = new EventManager();
 const socket = new APISocket(events);
 const textQueue = new TextQueue(scene, engine);
 
-// Static dark background instead of video to reduce GPU load.
-scene.background = new THREE.Color(0x0a0f14);
-
 // Lights for 3D models
 const ambient = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambient);

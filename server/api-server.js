@@ -49,9 +49,10 @@ function broadcast(event) {
   console.log(`[broadcast] ${event.action} -> ${sent} clients`);
 }
 
-wss.on('connection', (ws) => {
-  console.log('[ws] client connected');
-  ws.send(JSON.stringify({ action: 'text', text: 'Conectado al motor visual', duration: 3 }));
+wss.on('connection', (ws, req) => {
+  const ip = req.socket.remoteAddress;
+  const ua = req.headers['user-agent'] || 'unknown';
+  console.log(`[ws] client connected from ${ip} — ${ua}`);
 
   ws.on('message', (data) => {
     try {
