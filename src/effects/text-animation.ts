@@ -525,20 +525,21 @@ export class TextEffect {
     const formationDuration = 1.2 + Math.max(0, lines.length - 1) * 0.12;
     this.timeline.to({}, { duration: formationDuration });
     this.timeline.to({}, { duration: holdDuration });
-    const breathingDuration = Math.max(0.2, holdDuration / 2);
+    const breathingDuration = Math.max(0.2, holdDuration / 4);
     this.timeline.to(this.textGroup.position, {
-      y: 0.07,
+      y: 0.045,
       duration: breathingDuration,
       yoyo: true,
-      repeat: 1,
+      repeat: 3,
       ease: 'sine.inOut',
     }, '<');
     this.timeline.to(this.textGroup.rotation, {
-      y: 0.08,
-      z: 0.012,
+      x: 0.018,
+      y: 0.055,
+      z: 0.008,
       duration: breathingDuration,
       yoyo: true,
-      repeat: 1,
+      repeat: 3,
       ease: 'sine.inOut',
     }, '<');
     this.timeline.call(() => this.stopGlitter());
