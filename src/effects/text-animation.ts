@@ -27,7 +27,7 @@ const HALF_FRAME_WIDTH = 4.5;
 const HALF_FRAME_HEIGHT = 8;
 
 // One vivid, readable color per whole message; deliberately no pink or purple.
-const TEXT_COLORS = [0x0878d1, 0x008b9a, 0x218838, 0xe05a00, 0x008577, 0x315acb, 0x006fae];
+const TEXT_COLORS = [0x35baff, 0x20d8e8, 0x68df70, 0xffa14a, 0x31d9b4, 0x7898ff, 0x42c7f5];
 type FireworkPalette = {
   primary: number;
   secondary: number;
