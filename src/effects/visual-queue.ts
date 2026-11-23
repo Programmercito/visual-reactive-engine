@@ -10,7 +10,7 @@ import { estimateTextHeight, TextEffect } from './text-animation';
 type QueuedAction = Extract<VisualAction, { type: 'text' | 'gift' | 'show-image' | 'particles' | 'explosion' | 'spawn' }>;
 type QueueItem = { action: QueuedAction; mode: string };
 type Reservation = { y: number; height: number };
-type TextAction = Extract<VisualAction, { type: 'text' }>;
+type SpokenAction = Extract<VisualAction, { type: 'text' | 'gift' }>;
 
 const MAX_VISIBLE_EVENTS = 3;
 const FRAME_HALF_HEIGHT = 8;
@@ -31,7 +31,7 @@ export class VisualQueue {
   constructor(
     private readonly scene: THREE.Scene,
     private readonly engine: AnimationEngine,
-    private readonly onTextStart: (action: TextAction) => void,
+    private readonly onTextStart: (action: SpokenAction) => void,
   ) {}
 
   add(action: QueuedAction, mode: string): void {
@@ -84,13 +84,7 @@ export class VisualQueue {
           mode,
           duration: action.duration,
           y: y - 1.25,
-          onStart: () => this.onTextStart({
-            type: 'text',
-            text: giftText,
-            sender: action.sender,
-            mode,
-            duration: action.duration,
-          }),
+          onStart: () => this.onTextStart(action),
         });
         update = (dt) => effect.update(dt);
         dispose = () => effect.dispose();

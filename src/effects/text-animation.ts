@@ -513,6 +513,7 @@ export class TextEffect {
     const lines = this.textGroup.children.filter(
       (child) => child.userData.isTextLine
     ) as THREE.Mesh[];
+    this.options.onStart?.();
     this.timeline = gsap.timeline({
       onComplete: () => {
         this.alive = false;

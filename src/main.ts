@@ -21,9 +21,13 @@ const socket = new APISocket(events);
 const speechQueue = new SpeechQueue();
 let currentMode: AnimationMode = getMode();
 const visualQueue = new VisualQueue(scene, engine, (action) => {
-  const spokenText = action.sender
-    ? `${action.sender.replace(/^@/, '')} dice: ${action.text}`
-    : action.text;
+  const sender = action.sender?.replace(/^@/, '').trim();
+  const donor = sender ? `${sender[0].toLocaleUpperCase('es-MX')}${sender.slice(1)}` : undefined;
+  const spokenText = action.type === 'gift'
+    ? `${donor ? `${donor} ha donado ` : ''}${action.gift} x${action.count}`
+    : donor
+      ? `${donor} dice: ${action.text}`
+      : action.text;
   speechQueue.add(spokenText);
 });
 const speechToggle = document.getElementById('speech-toggle') as HTMLButtonElement;
