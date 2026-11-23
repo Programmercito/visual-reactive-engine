@@ -6,11 +6,7 @@ import { createRenderer } from './core/renderer';
 import { AnimationEngine } from './core/animation-engine';
 import { EventManager, type VisualAction } from './api/events';
 import { APISocket } from './api/websocket';
-import { TextQueue } from './effects/text-queue';
-import { ImageFloatEffect } from './effects/image-float';
-import { ParticleEffect } from './effects/particles';
-import { ExplosionEffect } from './effects/explosion';
-import { ModelActorEffect } from './effects/model-actor';
+import { VisualQueue } from './effects/visual-queue';
 import { SpeechQueue } from './effects/speech-queue';
 import { getMode, MODES, type AnimationMode } from './config/modes';
 
@@ -23,7 +19,13 @@ const engine = new AnimationEngine(scene, camera, renderer);
 const events = new EventManager();
 const socket = new APISocket(events);
 const speechQueue = new SpeechQueue();
-const textQueue = new TextQueue(scene, engine);
+let currentMode: AnimationMode = getMode();
+const visualQueue = new VisualQueue(scene, engine, (action) => {
+  const spokenText = action.sender
+    ? `${action.sender.replace(/^@/, '')} dice: ${action.text}`
+    : action.text;
+  speechQueue.add(spokenText);
+});
 const speechToggle = document.getElementById('speech-toggle') as HTMLButtonElement;
 
 if (!speechQueue.supported) {
@@ -44,8 +46,6 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 1);
 dirLight.position.set(5, 10, 7);
 scene.add(dirLight);
 
-let currentMode: AnimationMode = getMode();
-
 // ---- Resize ----
 function onResize() {
   const w = window.innerWidth;
@@ -59,73 +59,13 @@ onResize();
 // ---- Handle actions ----
 events.onAction((action: VisualAction) => {
   switch (action.type) {
-    case 'text': {
-      textQueue.add({
-        text: action.text,
-        sender: action.sender,
-        mode: action.mode || currentMode.id,
-        duration: action.duration,
-        onStart: () => {
-          const spokenText = action.sender
-            ? `${action.sender.replace(/^@/, '')} dice: ${action.text}`
-            : action.text;
-          speechQueue.add(spokenText);
-        },
-      });
-      break;
-    }
-    case 'show-image': {
-      const fx = new ImageFloatEffect(scene, {
-        image: action.image,
-        duration: action.duration,
-        x: action.x,
-        y: action.y,
-        scale: action.scale,
-      });
-      engine.add({
-        update: () => fx.update(),
-        dispose: () => fx.dispose(),
-      });
-      break;
-    }
-    case 'particles': {
-      const fx = new ParticleEffect(scene, {
-        preset: action.preset,
-        x: action.x,
-        y: action.y,
-        duration: action.duration,
-        mode: currentMode.id,
-      });
-      engine.add({
-        update: (dt) => fx.update(dt),
-        dispose: () => fx.dispose(),
-      });
-      break;
-    }
-    case 'explosion': {
-      const fx = new ExplosionEffect(scene, {
-        x: action.x,
-        y: action.y,
-        preset: action.preset,
-        duration: action.duration,
-        mode: currentMode.id,
-      });
-      engine.add({
-        update: (dt) => fx.update(dt),
-        dispose: () => fx.dispose(),
-      });
-      break;
-    }
+    case 'text':
+    case 'gift':
+    case 'show-image':
+    case 'particles':
+    case 'explosion':
     case 'spawn': {
-      const fx = new ModelActorEffect(scene, {
-        asset: action.asset,
-        animation: action.animation,
-        duration: action.duration,
-      });
-      engine.add({
-        update: (dt) => fx.update(dt),
-        dispose: () => fx.dispose(),
-      });
+      visualQueue.add(action, currentMode.id);
       break;
     }
     case 'set-mode': {
@@ -155,6 +95,7 @@ socket.connect();
 if (window.location.search.includes('demo')) {
   const demos: VisualAction[] = [
     { type: 'text', text: '¡Hola TikTok!', duration: 5 },
+    { type: 'gift', sender: '@ana', gift: 'Rosa', count: 334, duration: 5 },
     { type: 'particles', preset: 'gold-explosion', duration: 3 },
     { type: 'spawn', asset: 'dragon', animation: 'fly', duration: 6 },
     { type: 'show-image', image: 'gift.png', duration: 4 },

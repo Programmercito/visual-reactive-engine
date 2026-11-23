@@ -54,14 +54,16 @@ export class ImageFloatEffect {
     this.mesh = new THREE.Sprite(material);
 
     const baseScale = options.scale ?? 2.5;
+    const centerY = options.y ?? -1;
+    const travel = Math.min(baseScale / 2, 1.25);
     this.mesh.scale.set(baseScale, baseScale, 1);
-    this.mesh.position.set(options.x ?? 0, options.y ?? -3, 4);
+    this.mesh.position.set(options.x ?? 0, centerY - travel, 4);
     this.scene.add(this.mesh);
 
     const tl = gsap.timeline({ onComplete: () => (this.alive = false) });
     tl.to(material, { opacity: 1, duration: 0.4 });
     tl.to(this.mesh.position, {
-      y: (options.y ?? -3) + 4,
+      y: centerY + travel,
       duration: options.duration ?? 4,
       ease: 'power1.out',
     });

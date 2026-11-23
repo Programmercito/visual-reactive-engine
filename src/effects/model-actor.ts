@@ -19,7 +19,8 @@ export class ModelActorEffect {
     private scene: THREE.Scene,
     options: ModelActorOptions
   ) {
-    this.group.position.set(options.x ?? 0, options.y ?? -4, 1);
+    const centerY = options.y ?? 0;
+    this.group.position.set(options.x ?? 0, centerY - 1.5, 1);
     this.group.scale.set(0, 0, 0);
     this.scene.add(this.group);
 
@@ -70,7 +71,7 @@ export class ModelActorEffect {
 
     if (animType === 'fly') {
       tl.to(this.group.position, {
-        y: 4,
+        y: centerY + 1.5,
         x: 2,
         duration: duration * 0.8,
         ease: 'power1.inOut',
@@ -86,14 +87,14 @@ export class ModelActorEffect {
         ease: 'power1.inOut',
       });
       tl.to(this.group.position, {
-        y: 1,
+        y: centerY + 0.7,
         duration: duration * 0.5,
         yoyo: true,
         repeat: 1,
       }, '<');
     } else {
       tl.to(this.group.position, {
-        y: 0,
+        y: centerY,
         duration: duration * 0.5,
         yoyo: true,
         repeat: 1,

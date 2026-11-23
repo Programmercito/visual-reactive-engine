@@ -8,6 +8,9 @@ export interface ExplosionOptions {
   preset?: string;
   duration?: number;
   mode?: string;
+  speedScale?: number;
+  minY?: number;
+  maxY?: number;
 }
 
 export class ExplosionEffect {
@@ -38,6 +41,9 @@ export class ExplosionEffect {
       y: options.y,
       duration: options.duration ?? 1.5,
       mode: options.mode,
+      speedScale: options.speedScale,
+      minY: options.minY,
+      maxY: options.maxY,
     });
   }
 

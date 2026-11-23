@@ -8,6 +8,9 @@ export interface ParticleOptions {
   y?: number;
   duration?: number;
   mode?: string;
+  speedScale?: number;
+  minY?: number;
+  maxY?: number;
 }
 
 export class ParticleEffect {
@@ -15,12 +18,19 @@ export class ParticleEffect {
   private alive = true;
   private velocities: THREE.Vector3[] = [];
   private geometry: THREE.BufferGeometry;
+  private gravityScale = 1;
+  private minY?: number;
+  private maxY?: number;
 
   constructor(
     private scene: THREE.Scene,
     options: ParticleOptions
   ) {
     const mode = getMode(options.mode);
+    const speedScale = Math.max(0.1, options.speedScale ?? 1);
+    this.gravityScale = speedScale;
+    this.minY = options.minY;
+    this.maxY = options.maxY;
     // Halved counts to keep frame rate stable on mid-range GPUs.
     const count = options.preset.includes('big') ? 200 : 80;
     this.geometry = new THREE.BufferGeometry();
@@ -46,8 +56,8 @@ export class ParticleEffect {
       sizes[i] = Math.random() * 0.15 + 0.05;
 
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 4 + 1;
-      const zSpeed = (Math.random() - 0.5) * 2;
+      const speed = (Math.random() * 4 + 1) * speedScale;
+      const zSpeed = (Math.random() - 0.5) * 2 * speedScale;
       this.velocities.push(
         new THREE.Vector3(Math.cos(angle) * speed, Math.sin(angle) * speed, zSpeed)
       );
@@ -83,9 +93,18 @@ export class ParticleEffect {
     for (let i = 0; i < this.velocities.length; i++) {
       const v = this.velocities[i];
       positions[i * 3] += v.x * dt;
-      positions[i * 3 + 1] += v.y * dt;
+      const nextY = positions[i * 3 + 1] + v.y * dt;
+      if (this.minY !== undefined && nextY < this.minY) {
+        positions[i * 3 + 1] = this.minY;
+        if (v.y < 0) v.y = 0;
+      } else if (this.maxY !== undefined && nextY > this.maxY) {
+        positions[i * 3 + 1] = this.maxY;
+        if (v.y > 0) v.y = 0;
+      } else {
+        positions[i * 3 + 1] = nextY;
+      }
       positions[i * 3 + 2] += v.z * dt;
-      v.y -= 1.5 * dt; // gravity
+      v.y -= 1.5 * this.gravityScale * dt; // gravity
       v.x *= 0.98;
       v.z *= 0.98;
     }

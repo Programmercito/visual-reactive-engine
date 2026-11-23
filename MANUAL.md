@@ -45,6 +45,7 @@ También puedes enviar eventos desde la consola del navegador:
 
 ```js
 vre.emit({ action: 'text', text: '¡Hola mundo!' });
+vre.emit({ action: 'gift', sender: '@ana', gift: 'Rosa', count: 334 });
 vre.emit({ action: 'particles', preset: 'gold-explosion' });
 vre.emit({ action: 'spawn', asset: 'dragon', animation: 'fly' });
 ```
@@ -58,6 +59,22 @@ Conecta cualquier cliente a `ws://localhost:8787` y envía JSON:
 
 ```json
 { "action": "text", "sender": "@ana", "text": "Nuevo seguidor", "duration": 5 }
+```
+
+Los regalos usan un evento independiente. `gift` es el nombre del regalo, `count` la cantidad (por defecto `1`) y `sender` es opcional:
+
+```json
+{ "action": "gift", "sender": "@ana", "gift": "Rosa", "count": 334, "duration": 5 }
+```
+
+También se envía por HTTP con el mismo endpoint `POST /event`. Un regalo usa la misma animación que un comentario —cohete, fuegos artificiales y texto— y añade un objeto 3D: una rosa animada para `Rosa`/`Rose` o una caja que se abre para los demás. El texto muestra al donante, el regalo y su cantidad debajo del objeto. Texto, regalos y demás efectos visuales comparten una única cola FIFO, con un máximo de tres eventos activos y posiciones reservadas para que no se pisen. El cohete y los fuegos artificiales forman parte del mismo evento de regalo. Para regalos reales de TikTok, un conector externo debe traducir los eventos de TikTok a este formato; el detector `gift-detector` ya realiza esa traducción.
+
+```powershell
+$body = '{"action":"gift","sender":"@ana","gift":"Rosa","count":334,"duration":5}'
+
+curl.exe -X POST http://localhost:8787/event `
+  -H "Content-Type: application/json" `
+  -d $body
 ```
 
 ### HTTP POST
@@ -85,6 +102,7 @@ curl.exe -X POST http://localhost:8787/event `
 | Acción | Campos | Descripción |
 |--------|--------|-------------|
 | `text` | `text`, `sender`, `mode`, `duration` | Muestra el nombre del remitente, seguido de `:`, pequeño sobre el texto principal |
+| `gift` | `gift`, `sender`, `count`, `duration` | Animación 3D de regalo, con donante y cantidad |
 | `show-image` | `image`, `x`, `y`, `scale`, `duration` | Imagen flotante PNG/WebP |
 | `particles` | `preset`, `x`, `y`, `duration` | Sistema de partículas |
 | `explosion` | `preset`, `x`, `y`, `duration` | Partículas + luz puntual |
@@ -98,6 +116,7 @@ Los comentarios se ajustan al espacio del lienzo: se muestran hasta 10 líneas (
 
 ```json
 { "action": "text", "sender": "@ana", "text": "¡Gracias por la rosa!", "mode": "gold", "duration": 5 }
+{ "action": "gift", "sender": "@ana", "gift": "Rosa", "count": 334, "duration": 5 }
 { "action": "show-image", "image": "gift.png", "x": 0, "y": -2, "scale": 3, "duration": 4 }
 { "action": "spawn", "asset": "dragon", "animation": "fly", "duration": 8 }
 { "action": "particles", "preset": "gold-explosion", "x": 0, "y": 0, "duration": 2 }

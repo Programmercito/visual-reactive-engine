@@ -6,6 +6,7 @@ export interface APIEvent {
     | 'show-image'
     | 'particles'
     | 'text'
+    | 'gift'
     | 'explosion'
     | 'set-mode'
     | 'clear';
@@ -15,6 +16,8 @@ export interface APIEvent {
   preset?: string;
   text?: string;
   sender?: string;
+  gift?: string;
+  count?: number;
   mode?: string;
   duration?: number;
   x?: number;
@@ -29,6 +32,7 @@ export type VisualAction =
   | { type: 'show-image'; image: string; duration: number; x?: number; y?: number; scale?: number }
   | { type: 'particles'; preset: string; x?: number; y?: number; duration: number }
   | { type: 'text'; text: string; sender?: string; mode?: string; duration: number }
+  | { type: 'gift'; sender?: string; gift: string; count: number; duration: number }
   | { type: 'explosion'; x?: number; y?: number; preset?: string; duration: number }
   | { type: 'set-mode'; mode: AnimationMode }
   | { type: 'clear' };
@@ -90,6 +94,18 @@ export class EventManager {
           text: event.text,
           sender: typeof event.sender === 'string' ? event.sender.trim().slice(0, 64) || undefined : undefined,
           mode: event.mode,
+          duration,
+        };
+
+      case 'gift':
+        if (typeof event.gift !== 'string' || !event.gift.trim()) return null;
+        return {
+          type: 'gift',
+          sender: typeof event.sender === 'string' ? event.sender.trim().slice(0, 64) || undefined : undefined,
+          gift: event.gift.trim().slice(0, 80),
+          count: typeof event.count === 'number' && Number.isFinite(event.count) && event.count > 0
+            ? Math.min(Number.MAX_SAFE_INTEGER, Math.floor(event.count))
+            : 1,
           duration,
         };
 

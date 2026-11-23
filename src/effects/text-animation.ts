@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { GiftEffect } from './gift';
 import { getFont } from './text-font';
 
 export interface TextEffectOptions {
   text: string;
   sender?: string;
+  gift?: { name: string };
   mode?: string;
   duration?: number;
   x?: number;
@@ -15,7 +17,7 @@ export interface TextEffectOptions {
 }
 
 const FONT_SIZE = 0.58;
-const LINE_HEIGHT = FONT_SIZE * 1.4;
+const GIFT_FONT_SIZE = 0.36;
 const SENDER_FONT_SIZE = 0.34;
 const SENDER_LINE_HEIGHT = SENDER_FONT_SIZE * 1.4;
 const SENDER_GAP = 0.14;
@@ -73,12 +75,12 @@ function getSenderLines(sender = ''): string[] {
   return trimmedSender ? wrapLines(`${trimmedSender}:`, 24) : [];
 }
 
-function fitBodyLines(text: string, sender = ''): string[] {
+function fitBodyLines(text: string, sender = '', fontSize = FONT_SIZE): string[] {
   const lines = wrapLines(text.trim(), MAX_CHARS_PER_LINE);
   const senderLines = getSenderLines(sender);
   const senderHeight = senderLines.length * SENDER_LINE_HEIGHT;
   const availableHeight = SAFE_HEIGHT - senderHeight - (senderLines.length ? SENDER_GAP : 0);
-  const maxLines = Math.max(1, Math.floor(availableHeight / LINE_HEIGHT));
+  const maxLines = Math.max(1, Math.floor(availableHeight / (fontSize * 1.4)));
 
   if (lines.length <= maxLines) return lines;
 
@@ -109,9 +111,9 @@ function nextFireworkPalette(): FireworkPalette {
   return chosen.palette;
 }
 
-/** Conservative vertical reservation used by TextQueue to avoid overlapping messages. */
-export function estimateTextHeight(text: string, sender = ''): number {
-  const bodyHeight = fitBodyLines(text, sender).length * LINE_HEIGHT;
+/** Conservative vertical reservation used by VisualQueue to avoid overlapping events. */
+export function estimateTextHeight(text: string, sender = '', bodyFontSize = FONT_SIZE): number {
+  const bodyHeight = fitBodyLines(text, sender, bodyFontSize).length * bodyFontSize * 1.4;
   const senderLineCount = getSenderLines(sender).length;
   const senderHeight = senderLineCount ? senderLineCount * SENDER_LINE_HEIGHT + SENDER_GAP : 0;
   return Math.min(SAFE_HEIGHT, bodyHeight + senderHeight) + 0.7;
@@ -161,6 +163,7 @@ export class TextEffect {
   private readonly rocket = new THREE.Group();
   private readonly fireworks = new THREE.Group();
   private readonly textGroup = new THREE.Group();
+  private giftObject?: GiftEffect;
   private readonly particles: FireworkParticle[] = [];
   private readonly glints: AnimatedInstance[] = [];
   private burstFlash?: THREE.PointLight;
@@ -180,6 +183,10 @@ export class TextEffect {
     // Position varies for every message; short messages can use a wider x range.
     this.group.position.set(0, options.y ?? (Math.random() * 3.2 - 1.6), 0);
     this.group.add(this.rocket, this.fireworks, this.textGroup);
+    if (options.gift) {
+      this.giftObject = new GiftEffect(this.group, { gift: options.gift.name, y: 1.8 });
+      this.giftObject.group.scale.setScalar(0.01);
+    }
     this.scene.add(this.group);
 
     this.createRocket(this.palette.primary);
@@ -189,8 +196,10 @@ export class TextEffect {
     getFont((font) => {
       if (!this.alive) return;
 
+      const bodyFontSize = options.gift ? GIFT_FONT_SIZE : FONT_SIZE;
+      const bodyLineHeight = bodyFontSize * 1.4;
       const senderLines = getSenderLines(options.sender);
-      const bodyLines = fitBodyLines(options.text, options.sender);
+      const bodyLines = fitBodyLines(options.text, options.sender, bodyFontSize);
       const makeGeometries = (lines: string[], size: number) => lines.map((line) => {
         const geometry = new TextGeometry(line, {
           font,
@@ -206,7 +215,7 @@ export class TextEffect {
         return geometry;
       });
       const senderGeometries = makeGeometries(senderLines, SENDER_FONT_SIZE);
-      const bodyGeometries = makeGeometries(bodyLines, FONT_SIZE);
+      const bodyGeometries = makeGeometries(bodyLines, bodyFontSize);
       const geometries = [...senderGeometries, ...bodyGeometries];
 
       const widths = geometries.map((geometry) => {
@@ -214,7 +223,7 @@ export class TextEffect {
         return bounds.max.x - bounds.min.x;
       });
       const width = Math.max(0, ...widths);
-      const bodyHeight = Math.max(FONT_SIZE, bodyLines.length * LINE_HEIGHT);
+      const bodyHeight = Math.max(bodyFontSize, bodyLines.length * bodyLineHeight);
       const senderHeight = senderLines.length * SENDER_LINE_HEIGHT;
       const height = bodyHeight + (senderLines.length ? senderHeight + SENDER_GAP : 0);
       const fitScale = Math.min(1, SAFE_WIDTH / width, SAFE_HEIGHT / height);
@@ -282,7 +291,7 @@ export class TextEffect {
       });
       const bodyTop = blockTop - senderHeight - (senderLines.length ? SENDER_GAP : 0);
       bodyGeometries.forEach((geometry, index) => {
-        const finalY = bodyTop - LINE_HEIGHT / 2 - index * LINE_HEIGHT;
+        const finalY = bodyTop - bodyLineHeight / 2 - index * bodyLineHeight;
         addTextLine(geometry, finalY);
       });
 
@@ -540,6 +549,15 @@ export class TextEffect {
       this.burst();
       this.formText(lines);
       this.startGlitter();
+      if (this.giftObject) {
+        this.tweens.push(gsap.to(this.giftObject.group.scale, {
+          x: 1,
+          y: 1,
+          z: 1,
+          duration: 0.55,
+          ease: 'back.out(1.8)',
+        }));
+      }
     }, undefined, '+=0.02');
 
     const formationDuration = 1.2 + Math.max(0, lines.length - 1) * 0.12;
@@ -571,6 +589,15 @@ export class TextEffect {
       duration: 0.35,
       ease: 'power2.in',
     });
+    if (this.giftObject) {
+      this.timeline.to(this.giftObject.group.scale, {
+        x: 0.01,
+        y: 0.01,
+        z: 0.01,
+        duration: 0.35,
+        ease: 'power2.in',
+      }, '<');
+    }
   }
 
   private burst(): void {
