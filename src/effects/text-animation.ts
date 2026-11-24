@@ -27,6 +27,10 @@ const SAFE_WIDTH = 7;
 const SAFE_HEIGHT = 8.2;
 const HALF_FRAME_WIDTH = 4.5;
 const HALF_FRAME_HEIGHT = 8;
+const FIREWORK_BURST_INTERVAL = 1.4;
+const MIN_FIREWORK_PARTICLES = 18;
+const MAX_FIREWORK_PARTICLES = 84;
+const FIREWORK_RAMP_RATIO = 0.7;
 
 // One vivid, readable color per whole message; deliberately no pink or purple.
 const TEXT_COLORS = [0x35baff, 0x20d8e8, 0x68df70, 0xffa14a, 0x31d9b4, 0x7898ff, 0x42c7f5];
@@ -167,6 +171,10 @@ export class TextEffect {
   private readonly particles: FireworkParticle[] = [];
   private readonly glints: AnimatedInstance[] = [];
   private burstFlash?: THREE.PointLight;
+  private fireworksRepeating = false;
+  private fireworkBurstTimer = 0;
+  private fireworksElapsed = 0;
+  private fireworksDuration = 0;
   private streakGeometry?: THREE.BufferGeometry;
   private streakMaterial?: THREE.LineBasicMaterial;
   private glintMaterial?: THREE.MeshBasicMaterial;
@@ -421,36 +429,10 @@ export class TextEffect {
     ];
     for (let index = 0; index < 84; index++) {
       const color = new THREE.Color(index % 7 === 0 ? this.palette.core : randomFrom(sparkColors));
-      const angle = this.fireworkStyle === 'ring'
-        ? (index / 84) * Math.PI * 2
-        : Math.random() * Math.PI * 2;
-      const speed = 4.2 + Math.random() * 2.2;
-      let velocity: THREE.Vector3;
-      if (this.fireworkStyle === 'ring') {
-        velocity = new THREE.Vector3(
-          Math.cos(angle) * speed,
-          Math.sin(angle) * speed,
-          (Math.random() - 0.5) * 0.7
-        );
-      } else if (this.fireworkStyle === 'willow') {
-        velocity = new THREE.Vector3(
-          Math.cos(angle) * speed * 0.7,
-          1.4 + Math.random() * 2.2,
-          Math.sin(angle) * speed * 0.5
-        );
-      } else {
-        const vertical = Math.random() * 2 - 1;
-        const horizontal = Math.sqrt(1 - vertical * vertical);
-        velocity = new THREE.Vector3(
-          Math.cos(angle) * horizontal * speed,
-          vertical * speed,
-          Math.sin(angle) * horizontal * speed * 0.55
-        );
-      }
       this.particles.push({
         index,
         color,
-        targetVelocity: velocity,
+        targetVelocity: this.createFireworkVelocity(index),
         velocity: new THREE.Vector3(),
         delay: Math.floor(index / 28) * 0.15,
         delayRemaining: 0,
@@ -462,6 +444,36 @@ export class TextEffect {
         position: new THREE.Vector3(),
       });
     }
+  }
+
+  private createFireworkVelocity(index: number): THREE.Vector3 {
+    const angle = this.fireworkStyle === 'ring'
+      ? (index / 84) * Math.PI * 2 + (Math.random() - 0.5) * 0.12
+      : Math.random() * Math.PI * 2;
+    const speed = 4.2 + Math.random() * 2.2;
+
+    if (this.fireworkStyle === 'ring') {
+      return new THREE.Vector3(
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed,
+        (Math.random() - 0.5) * 0.7
+      );
+    }
+    if (this.fireworkStyle === 'willow') {
+      return new THREE.Vector3(
+        Math.cos(angle) * speed * 0.7,
+        1.4 + Math.random() * 2.2,
+        Math.sin(angle) * speed * 0.5
+      );
+    }
+
+    const vertical = Math.random() * 2 - 1;
+    const horizontal = Math.sqrt(1 - vertical * vertical);
+    return new THREE.Vector3(
+      Math.cos(angle) * horizontal * speed,
+      vertical * speed,
+      Math.sin(angle) * horizontal * speed * 0.55
+    );
   }
 
   private createGlints(width: number, height: number, fitScale: number): void {
@@ -562,20 +574,22 @@ export class TextEffect {
     }, undefined, '+=0.02');
 
     const formationDuration = 1.2 + Math.max(0, lines.length - 1) * 0.12;
+    this.fireworksDuration = formationDuration + holdDuration + 0.55;
     this.timeline.to({}, { duration: formationDuration });
     this.timeline.to({}, { duration: holdDuration });
     const breathingDuration = Math.max(0.2, holdDuration / 4);
     this.timeline.to(this.textGroup.position, {
-      y: 0.045,
+      x: 0.1,
+      y: 0.18,
       duration: breathingDuration,
       yoyo: true,
       repeat: 3,
       ease: 'sine.inOut',
     }, '<');
     this.timeline.to(this.textGroup.rotation, {
-      x: 0.018,
-      y: 0.055,
-      z: 0.008,
+      x: 0.035,
+      y: 0.12,
+      z: 0.02,
       duration: breathingDuration,
       yoyo: true,
       repeat: 3,
@@ -599,9 +613,23 @@ export class TextEffect {
         ease: 'power2.in',
       }, '<');
     }
+    this.timeline.call(() => this.stopFireworks());
   }
 
   private burst(): void {
+    this.fireworksRepeating = true;
+    this.fireworkBurstTimer = FIREWORK_BURST_INTERVAL;
+    const rampDuration = Math.max(0.1, this.fireworksDuration * FIREWORK_RAMP_RATIO);
+    const progress = THREE.MathUtils.clamp(this.fireworksElapsed / rampDuration, 0, 1);
+    const particleCount = Math.round(
+      MIN_FIREWORK_PARTICLES + (MAX_FIREWORK_PARTICLES - MIN_FIREWORK_PARTICLES) * progress
+    );
+    const activeParticleIndices = new Set(
+      Array.from({ length: particleCount }, (_, index) =>
+        Math.floor((index * MAX_FIREWORK_PARTICLES) / particleCount)
+      )
+    );
+
     if (this.burstFlash) {
       this.burstFlash.intensity = 0;
       const flash = gsap.timeline();
@@ -612,14 +640,14 @@ export class TextEffect {
 
     if (this.streakMaterial) {
       this.streakMaterial.opacity = 0.95;
-      this.tweens.push(gsap.to(this.streakMaterial, {
-        opacity: 0,
-        duration: 0.55,
-        delay: 1.7,
-      }));
     }
 
     for (const particle of this.particles) {
+      if (!activeParticleIndices.has(particle.index)) {
+        particle.active = false;
+        continue;
+      }
+      particle.targetVelocity.copy(this.createFireworkVelocity(particle.index));
       particle.active = true;
       particle.started = false;
       particle.age = 0;
@@ -627,6 +655,18 @@ export class TextEffect {
       particle.position.set(0, 0, 0.2);
       particle.velocity.set(0, 0, 0);
     }
+  }
+
+  private stopFireworks(): void {
+    this.fireworksRepeating = false;
+    this.fireworkBurstTimer = 0;
+    this.fireworksElapsed = 0;
+    this.particles.forEach((particle) => {
+      particle.active = false;
+    });
+    if (this.streakMaterial) this.streakMaterial.opacity = 0;
+    if (this.burstFlash) this.burstFlash.intensity = 0;
+    this.stopGlitter();
   }
 
   private formText(lines: THREE.Mesh[]): void {
@@ -698,6 +738,12 @@ export class TextEffect {
   }
 
   update(dt = 0): boolean {
+    if (this.fireworksRepeating) {
+      this.fireworksElapsed = Math.min(this.fireworksDuration, this.fireworksElapsed + dt);
+      this.fireworkBurstTimer -= dt;
+      if (this.fireworkBurstTimer <= 0) this.burst();
+    }
+
     const positions = this.streakGeometry?.getAttribute('position') as THREE.BufferAttribute | undefined;
     const colors = this.streakGeometry?.getAttribute('color') as THREE.BufferAttribute | undefined;
 
